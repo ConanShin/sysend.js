@@ -84,6 +84,7 @@
     var index = 0;
     var channel;
     if (typeof window.BroadcastChannel === 'function') {
+        console.log('use broadcastchannel')
         channel = new BroadcastChannel(uniq_prefix);
         channel.onmessage = (event) => {
             if (event.target.name === uniq_prefix) {
@@ -96,7 +97,9 @@
             }
         }
     } else {
+        console.log('use localstorage')
         window.onstorage = (e) => {
+            console.log('stacked callbacks', callbacks)
             // prevent event to be executed on remove in IE
             if (e.key.match(re) && index++ % 2 === 0) {
                 var key = e.key.replace(re, '');
