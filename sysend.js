@@ -71,9 +71,9 @@
         // propagate events to iframes
         iframes.forEach(function(iframe) {
             var payload = {
-              name: uniq_prefix,
-              key: key,
-              data: data
+                name: uniq_prefix,
+                key: key,
+                data: data
             };
             iframe.window.postMessage(JSON.stringify(payload), "*");
         });
@@ -84,8 +84,8 @@
     var index = 0;
     var channel;
     if (typeof window.BroadcastChannel === 'function') {
-        channel = new window.BroadcastChannel(uniq_prefix);
-        channel.addEventListener('message', function(event) {
+        channel = new BroadcastChannel(uniq_prefix);
+        channel.onmessage = (event) => {
             if (event.target.name === uniq_prefix) {
                 var key = event.data && event.data.name;
                 if (callbacks[key]) {
@@ -94,9 +94,9 @@
                     });
                 }
             }
-        });
+        }
     } else {
-        window.addEventListener('storage', function(e) {
+        window.onstorage = (e) => {
             // prevent event to be executed on remove in IE
             if (e.key.match(re) && index++ % 2 === 0) {
                 var key = e.key.replace(re, '');
@@ -113,7 +113,7 @@
                     }
                 }
             }
-        }, false);
+        }
     }
     // ref: https://stackoverflow.com/a/326076/387194
     function is_iframe() {
@@ -124,23 +124,24 @@
         }
     }
     if (is_iframe()) {
-      window.addEventListener('message', function(e) {
-          if (typeof e.data === 'string' && e.data.match(prefix_re)) {
-              try {
-                  var payload = JSON.parse(e.data);
-                  if (payload && payload.name === uniq_prefix) {
-                      sysend.broadcast(payload.key, payload.data);
-                  }
-              } catch(e) {
-                  // ignore wrong JSON, the message don't came from Sysend
-                  // even that the string have unix_prefix, this is just in case
-              }
-          }
-      });
+        window.addEventListener('message', function(e) {
+            if (typeof e.data === 'string' && e.data.match(prefix_re)) {
+                try {
+                    var payload = JSON.parse(e.data);
+                    if (payload && payload.name === uniq_prefix) {
+                        sysend.broadcast(payload.key, payload.data);
+                    }
+                } catch(e) {
+                    // ignore wrong JSON, the message don't came from Sysend
+                    // even that the string have unix_prefix, this is just in case
+                }
+            }
+        });
     }
     return {
         broadcast: function(event, message) {
             if (channel) {
+                const channel = new BroadcastChannel(uniq_prefix)
                 channel.postMessage({name: event, data: message});
             } else {
                 set(event, to_json(message));
